@@ -4,7 +4,7 @@ A Go application for generating HomeKit QR code labels with device information.
 
 ## Description
 
-This tool generates professional HomeKit setup labels with QR codes, device codes, serial numbers, and other required information. It's a port of a Python script to Go, providing better performance and easier distribution.
+This tool generates professional HomeKit setup labels with QR codes, device codes, serial numbers, and other required information. It was created for the [HomeSpan](https://github.com/HomeSpan/HomeSpan/) project, taking inspiration from the original Python implementation by [AchimPieters/esp32-homekit-qrcode](https://github.com/AchimPieters/esp32-homekit-qrcode), but rewritten in Go for better performance, easier distribution, and improved cross-platform compatibility.
 
 ## Features
 
@@ -120,7 +120,19 @@ This project is open source and available for use.
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## Author
+## Credits
 
-Created for ESP32 HomeKitGenQRCode for HomeSpan
+This project was created for [HomeSpan](https://github.com/HomeSpan/HomeSpan/) - a robust Arduino library for creating ESP32-based HomeKit devices.
+
+The original idea and concept came from [AchimPieters/esp32-homekit-qrcode](https://github.com/AchimPieters/esp32-homekit-qrcode), a Python-based QR code generator. This Go implementation provides:
+
+- **Better Performance**: Compiled Go binaries are faster and more efficient than interpreted Python scripts
+- **Easier Distribution**: Single binary executable, no Python runtime or dependencies required
+- **Cross-Platform**: Works seamlessly on Windows, macOS, and Linux without additional setup
+- **Enhanced CLI**: Modern command-line interface using Cobra with auto-completion support
+
+## Related Projects
+
+- [HomeSpan](https://github.com/HomeSpan/HomeSpan/) - HomeKit Library for the Arduino-ESP32
+- [esp32-homekit-qrcode](https://github.com/AchimPieters/esp32-homekit-qrcode) - Original Python implementation
 
