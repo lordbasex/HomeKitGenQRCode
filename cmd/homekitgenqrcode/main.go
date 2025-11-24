@@ -31,10 +31,14 @@ var (
 	codeMAC      string // MAC address (optional, auto-generated if not provided)
 )
 
+// version is set at build time via ldflags
+var version = "dev"
+
 // rootCmd is the root command for the CLI application
 var rootCmd = &cobra.Command{
-	Use:   "homekitgenqrcode",
-	Short: "Generate HomeKit QR code labels",
+	Use:     "homekitgenqrcode",
+	Short:   "Generate HomeKit QR code labels",
+	Version: version,
 	Long: `Generate HomeKit QR code labels with device information.
 
 This tool generates professional HomeKit setup labels with QR codes,
