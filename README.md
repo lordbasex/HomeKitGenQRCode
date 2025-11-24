@@ -105,6 +105,46 @@ Display all available HomeKit device categories:
 homekitgenqrcode list-categories
 ```
 
+## HomeKit Categories
+
+The following table lists all supported HomeKit device categories with their IDs:
+
+| ID | Category Name |
+|----|---------------|
+| 1 | Other |
+| 2 | Bridge |
+| 3 | Fan |
+| 4 | Garage Door Opener |
+| 5 | Light |
+| 6 | Lock |
+| 7 | Outlet |
+| 8 | Switch |
+| 9 | Thermostat |
+| 10 | Sensor |
+| 11 | Security system |
+| 12 | Door |
+| 13 | Window |
+| 14 | Window covering |
+| 15 | Programmable switch |
+| 16 | Range extender |
+| 17 | IP camera |
+| 18 | Video doorbell |
+| 19 | Air purifier |
+| 20 | Heater |
+| 21 | Air conditioner |
+| 22 | Humidifier |
+| 23 | Dehumidifier |
+| 24 | Apple TV |
+| 26 | Speaker |
+| 27 | Airport |
+| 28 | Sprinkler |
+| 29 | Faucet |
+| 30 | Shower head |
+| 31 | Television |
+| 32 | Target remote |
+
+**Note:** Category ID 25 is not defined in the HomeKit specification.
+
 ## Examples
 
 ```bash
