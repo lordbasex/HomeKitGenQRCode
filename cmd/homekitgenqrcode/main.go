@@ -42,10 +42,10 @@ device codes, serial numbers, and other required information.
 
 Examples:
   # Generate a QR code label with all parameters
-  homekitgenqrcode generate --category 5 --password "123-45-678" --setup-id "ABCD" --mac "AABBCCDDEEFF" --output example.png
+  homekitgenqrcode generate --category 5 --password "613-80-755" --setup-id "ABCD" --mac "AABBCCDDEEFF" --output example.png
   
   # Using short flags
-  homekitgenqrcode generate -c 5 -p "123-45-678" -s "ABCD" -m "AABBCCDDEEFF" -o example.png
+  homekitgenqrcode generate -c 5 -p "613-80-755" -s "ABCD" -m "AABBCCDDEEFF" -o example.png
   
   # Generate with auto-generated setup code (easiest way)
   homekitgenqrcode code -c 5 -o example.png
@@ -67,7 +67,7 @@ var generateCmd = &cobra.Command{
 
 All parameters are required:
   - category: HomeKit device category ID (use 'list-categories' to see available options)
-  - password: Setup password in format XXX-XX-XXX (e.g., 123-45-678)
+  - password: Setup password in format XXX-XX-XXX (e.g., 613-80-755)
   - setup-id: Setup ID with 4 alphanumeric characters (0-9, A-Z) (e.g., ABCD)
   - mac: MAC address with 12 hexadecimal characters (e.g., AABBCCDDEEFF)
   - output: Output image file path (PNG format, directory will be created if needed)`,
@@ -348,16 +348,16 @@ func validatePassword(pwd string) error {
 	pwd = strings.TrimSpace(pwd)
 	// Format XXX-XX-XXX has 10 characters: 3 + 1 + 2 + 1 + 3 = 10
 	if len(pwd) != 10 {
-		return fmt.Errorf("invalid password length (%d). Expected format: XXX-XX-XXX (e.g., 123-45-678)", len(pwd))
+		return fmt.Errorf("invalid password length (%d). Expected format: XXX-XX-XXX (e.g., 613-80-755)", len(pwd))
 	}
 
 	parts := strings.Split(pwd, "-")
 	if len(parts) != 3 {
-		return fmt.Errorf("invalid password format. Expected format: XXX-XX-XXX (e.g., 123-45-678)")
+		return fmt.Errorf("invalid password format. Expected format: XXX-XX-XXX (e.g., 613-80-755)")
 	}
 
 	if len(parts[0]) != 3 || len(parts[1]) != 2 || len(parts[2]) != 3 {
-		return fmt.Errorf("invalid password format. Expected format: XXX-XX-XXX (e.g., 123-45-678)")
+		return fmt.Errorf("invalid password format. Expected format: XXX-XX-XXX (e.g., 613-80-755)")
 	}
 
 	for i, part := range parts {

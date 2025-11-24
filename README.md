@@ -61,7 +61,7 @@ homekitgenqrcode code -c 5 -o example.png
 ### Generate with All Parameters
 
 ```bash
-homekitgenqrcode generate --category 5 --password "123-45-678" --setup-id "ABCD" --mac "AABBCCDDEEFF" --output example.png
+homekitgenqrcode generate --category 5 --password "613-80-755" --setup-id "ABCD" --mac "AABBCCDDEEFF" --output example.png
 ```
 
 ### List Available Categories
@@ -162,7 +162,7 @@ homekitgenqrcode code -c 5 -o example.png -s ABCD -m AABBCCDDEEFF
 homekitgenqrcode code -c 5 -o output/example.png
 
 # Using long flags
-homekitgenqrcode generate --category 5 --password "123-45-678" --setup-id "ABCD" --mac "AABBCCDDEEFF" --output example.png
+homekitgenqrcode generate --category 5 --password "613-80-755" --setup-id "ABCD" --mac "AABBCCDDEEFF" --output example.png
 ```
 
 ## How It Works
