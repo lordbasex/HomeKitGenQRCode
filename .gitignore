@@ -28,7 +28,9 @@ go.work.sum
 /homekitgenqrcode
 *.png
 !assets/*.png
+!ejemplo.png
 dist/
+internal/generator/assets/
 
 # env file
 .env

@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"bytes"
 	"fmt"
 	"image"
 	"image/color"
@@ -24,14 +25,9 @@ func scaleCoords(x, y float64, scale float64) (int, int) {
 	return int(x * scale), int(y * scale)
 }
 
-// loadFontFace loads a font file (OTF or TTF) and returns a font.Face.
+// loadFontFace loads a font from byte data (OTF or TTF) and returns a font.Face.
 // Uses opentype package to properly support OpenType fonts.
-func loadFontFace(fontPath string, size float64) (font.Face, error) {
-	fontData, err := os.ReadFile(fontPath)
-	if err != nil {
-		return nil, fmt.Errorf("error reading font file: %w", err)
-	}
-
+func loadFontFace(fontData []byte, size float64) (font.Face, error) {
 	ttf, err := opentype.Parse(fontData)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing font: %w", err)
@@ -112,24 +108,8 @@ func GenerateHomeKitLabel(category int, password, setupID, mac, output string) e
 	serial := GenerateSerial()
 	csn := GenerateCSN()
 
-	// Get the directory where assets are located
-	// Try current directory first, then try relative to executable
-	assetsDir := "assets"
-	if _, err := os.Stat(assetsDir); os.IsNotExist(err) {
-		// Try to find assets relative to the module
-		assetsDir = filepath.Join(".", "assets")
-	}
-
-	templatePath := filepath.Join(assetsDir, "qrcode_ext.png")
-
-	// Load base template image
-	templateFile, err := os.Open(templatePath)
-	if err != nil {
-		return fmt.Errorf("error opening template: %w", err)
-	}
-	defer templateFile.Close()
-
-	templateImg, _, err := image.Decode(templateFile)
+	// Load base template image from embedded data
+	templateImg, _, err := image.Decode(bytes.NewReader(templateImageData))
 	if err != nil {
 		return fmt.Errorf("error decoding template: %w", err)
 	}
@@ -146,41 +126,33 @@ func GenerateHomeKitLabel(category int, password, setupID, mac, output string) e
 	dc := gg.NewContext(W, H)
 	dc.DrawImage(templateImg, 0, 0)
 
-	// Load fonts with scaled sizes using opentype for OTF support
-	textFontPath := filepath.Join(assetsDir, "SF-Pro-Text-Regular.otf")
-	barcodeFontPath := filepath.Join(assetsDir, "barcode39.ttf")
-
 	// Calculate font sizes based on scale factor
 	textFontSize := 18 * scale
 	barcodeFontSize := 36 * scale
 	superscriptFontSize := 8 * scale
 	codeFontSize := 28 * scale
 
-	// Load OTF font using opentype for proper OpenType support
-	textFace, err := loadFontFace(textFontPath, textFontSize)
+	// Load OTF font using opentype for proper OpenType support (from embedded data)
+	textFace, err := loadFontFace(textFontData, textFontSize)
 	if err != nil {
 		return fmt.Errorf("error loading text font: %w", err)
 	}
 
-	// Load barcode font (TTF) - try opentype first, fallback to gg if needed
-	barcodeFace, err := loadFontFace(barcodeFontPath, barcodeFontSize)
+	// Load barcode font (TTF) from embedded data
+	barcodeFace, err := loadFontFace(barcodeFontData, barcodeFontSize)
 	if err != nil {
-		// Fallback: try loading with gg for TTF fonts
-		if err := dc.LoadFontFace(barcodeFontPath, barcodeFontSize); err != nil {
-			return fmt.Errorf("error loading barcode font: %w", err)
-		}
-		barcodeFace = nil // Use gg for barcode rendering
+		return fmt.Errorf("error loading barcode font: %w", err)
 	}
 
-	// Load superscript font for trademark symbol
-	superscriptFace, err := loadFontFace(textFontPath, superscriptFontSize)
+	// Load superscript font for trademark symbol (from embedded data)
+	superscriptFace, err := loadFontFace(textFontData, superscriptFontSize)
 	if err != nil {
 		// Fallback to regular text face if superscript fails
 		superscriptFace = textFace
 	}
 
-	// Load code font for setup code digits
-	codeFace, err := loadFontFace(textFontPath, codeFontSize)
+	// Load code font for setup code digits (from embedded data)
+	codeFace, err := loadFontFace(textFontData, codeFontSize)
 	if err != nil {
 		return fmt.Errorf("error loading code font: %w", err)
 	}
@@ -293,26 +265,13 @@ func GenerateHomeKitLabel(category int, password, setupID, mac, output string) e
 		drawScaledTextOTF(rgbaImg, textFace, fmt.Sprintf("MAC: %s", formattedMAC), 560, y, scale)
 
 		// Draw MAC barcode
-		if barcodeFace != nil {
-			drawScaledTextOTF(rgbaImg, barcodeFace, fmt.Sprintf("*%s*", strings.ToUpper(mac)), 560, y+spacingBody+spacingExtra, scale)
-		} else {
-			// Fallback to gg for barcode font rendering
-			if err := dc.LoadFontFace(barcodeFontPath, barcodeFontSize); err == nil {
-				drawScaledText(dc, fmt.Sprintf("*%s*", strings.ToUpper(mac)), 560, y+spacingBody+spacingExtra, scale)
-			}
-		}
+		drawScaledTextOTF(rgbaImg, barcodeFace, fmt.Sprintf("*%s*", strings.ToUpper(mac)), 560, y+spacingBody+spacingExtra, scale)
 	}
 
 	y += spacingBody + spacingExtra
 
 	// Draw device code barcode
-	if barcodeFace != nil {
-		drawScaledTextOTF(rgbaImg, barcodeFace, fmt.Sprintf("*%s*", device), x, y, scale)
-	} else {
-		if err := dc.LoadFontFace(barcodeFontPath, barcodeFontSize); err == nil {
-			drawScaledText(dc, fmt.Sprintf("*%s*", device), x, y, scale)
-		}
-	}
+	drawScaledTextOTF(rgbaImg, barcodeFace, fmt.Sprintf("*%s*", device), x, y, scale)
 
 	y += barcodeSpacing
 
@@ -321,13 +280,7 @@ func GenerateHomeKitLabel(category int, password, setupID, mac, output string) e
 	y += spacingBody + spacingExtra
 
 	// Draw serial barcode
-	if barcodeFace != nil {
-		drawScaledTextOTF(rgbaImg, barcodeFace, fmt.Sprintf("*%s*", serial), x, y, scale)
-	} else {
-		if err := dc.LoadFontFace(barcodeFontPath, barcodeFontSize); err == nil {
-			drawScaledText(dc, fmt.Sprintf("*%s*", serial), x, y, scale)
-		}
-	}
+	drawScaledTextOTF(rgbaImg, barcodeFace, fmt.Sprintf("*%s*", serial), x, y, scale)
 
 	y += barcodeSpacing
 
@@ -336,13 +289,7 @@ func GenerateHomeKitLabel(category int, password, setupID, mac, output string) e
 	y += spacingBody + spacingExtra
 
 	// Draw CSN barcode
-	if barcodeFace != nil {
-		drawScaledTextOTF(rgbaImg, barcodeFace, fmt.Sprintf("*%s*", csn), x, y, scale)
-	} else {
-		if err := dc.LoadFontFace(barcodeFontPath, barcodeFontSize); err == nil {
-			drawScaledText(dc, fmt.Sprintf("*%s*", csn), x, y, scale)
-		}
-	}
+	drawScaledTextOTF(rgbaImg, barcodeFace, fmt.Sprintf("*%s*", csn), x, y, scale)
 
 	// Draw setup code digits (password without dashes) using OTF font
 	code := strings.ReplaceAll(password, "-", "")

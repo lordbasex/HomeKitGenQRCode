@@ -94,39 +94,33 @@ local:
 	@go build -ldflags "$(LDFLAGS)" -o $(APP_NAME) ./$(CMD_DIR)
 	@echo "$(GREEN)✓ Local binary created: $(APP_NAME)$(NC)"
 
-# Create release packages (includes assets)
+# Create release packages (binaries only, assets are embedded)
 release: all
 	@echo "$(YELLOW)Creating release packages...$(NC)"
 	@mkdir -p $(BUILD_DIR)/packages
 	@# Windows package
 	@mkdir -p $(BUILD_DIR)/packages/windows-amd64
 	@cp $(BUILD_DIR)/$(APP_NAME)-windows-amd64.exe $(BUILD_DIR)/packages/windows-amd64/$(APP_NAME).exe
-	@cp -r assets $(BUILD_DIR)/packages/windows-amd64/
 	@cd $(BUILD_DIR)/packages && zip -r windows-amd64.zip windows-amd64
 	@# macOS Intel package
 	@mkdir -p $(BUILD_DIR)/packages/darwin-amd64
 	@cp $(BUILD_DIR)/$(APP_NAME)-darwin-amd64 $(BUILD_DIR)/packages/darwin-amd64/$(APP_NAME)
-	@cp -r assets $(BUILD_DIR)/packages/darwin-amd64/
 	@cd $(BUILD_DIR)/packages && tar -czf darwin-amd64.tar.gz darwin-amd64
 	@# macOS Apple Silicon package
 	@mkdir -p $(BUILD_DIR)/packages/darwin-arm64
 	@cp $(BUILD_DIR)/$(APP_NAME)-darwin-arm64 $(BUILD_DIR)/packages/darwin-arm64/$(APP_NAME)
-	@cp -r assets $(BUILD_DIR)/packages/darwin-arm64/
 	@cd $(BUILD_DIR)/packages && tar -czf darwin-arm64.tar.gz darwin-arm64
 	@# Linux amd64 package
 	@mkdir -p $(BUILD_DIR)/packages/linux-amd64
 	@cp $(BUILD_DIR)/$(APP_NAME)-linux-amd64 $(BUILD_DIR)/packages/linux-amd64/$(APP_NAME)
-	@cp -r assets $(BUILD_DIR)/packages/linux-amd64/
 	@cd $(BUILD_DIR)/packages && tar -czf linux-amd64.tar.gz linux-amd64
 	@# Linux ARM64 package
 	@mkdir -p $(BUILD_DIR)/packages/linux-arm64
 	@cp $(BUILD_DIR)/$(APP_NAME)-linux-arm64 $(BUILD_DIR)/packages/linux-arm64/$(APP_NAME)
-	@cp -r assets $(BUILD_DIR)/packages/linux-arm64/
 	@cd $(BUILD_DIR)/packages && tar -czf linux-arm64.tar.gz linux-arm64
 	@# Linux ARM package
 	@mkdir -p $(BUILD_DIR)/packages/linux-arm
 	@cp $(BUILD_DIR)/$(APP_NAME)-linux-arm $(BUILD_DIR)/packages/linux-arm/$(APP_NAME)
-	@cp -r assets $(BUILD_DIR)/packages/linux-arm/
 	@cd $(BUILD_DIR)/packages && tar -czf linux-arm.tar.gz linux-arm
 	@echo "$(GREEN)✓ Release packages created in $(BUILD_DIR)/packages/$(NC)"
 
