@@ -15,7 +15,7 @@ GREEN := \033[0;32m
 YELLOW := \033[0;33m
 NC := \033[0m # No Color
 
-.PHONY: all clean windows darwin-amd64 darwin-arm64 linux-amd64 linux-arm64 linux-arm help
+.PHONY: all clean windows darwin-amd64 darwin-arm64 linux-amd64 linux-arm64 linux-arm help release
 
 # Default target
 all: clean windows darwin-amd64 darwin-arm64 linux-amd64 linux-arm64 linux-arm
@@ -31,6 +31,7 @@ help:
 	@echo "  linux-amd64     - Build for Linux 64-bit (amd64)"
 	@echo "  linux-arm64     - Build for Linux ARM64 (arm64) - Raspberry Pi 4+"
 	@echo "  linux-arm       - Build for Linux ARM (32-bit) - Raspberry Pi 3 and older"
+	@echo "  release          - Upload uncompressed binaries to GitHub release"
 	@echo "  clean            - Remove build directory"
 	@echo ""
 	@echo "Example: make all"
@@ -94,33 +95,43 @@ local:
 	@go build -ldflags "$(LDFLAGS)" -o $(APP_NAME) ./$(CMD_DIR)
 	@echo "$(GREEN)✓ Local binary created: $(APP_NAME)$(NC)"
 
-# Create release packages (binaries only, assets are embedded)
+# Upload binaries to GitHub release (uncompressed, assets are embedded)
 release: all
-	@echo "$(YELLOW)Creating release packages...$(NC)"
-	@mkdir -p $(BUILD_DIR)/packages
-	@# Windows package
-	@mkdir -p $(BUILD_DIR)/packages/windows-amd64
-	@cp $(BUILD_DIR)/$(APP_NAME)-windows-amd64.exe $(BUILD_DIR)/packages/windows-amd64/$(APP_NAME).exe
-	@cd $(BUILD_DIR)/packages && zip -r windows-amd64.zip windows-amd64
-	@# macOS Intel package
-	@mkdir -p $(BUILD_DIR)/packages/darwin-amd64
-	@cp $(BUILD_DIR)/$(APP_NAME)-darwin-amd64 $(BUILD_DIR)/packages/darwin-amd64/$(APP_NAME)
-	@cd $(BUILD_DIR)/packages && tar -czf darwin-amd64.tar.gz darwin-amd64
-	@# macOS Apple Silicon package
-	@mkdir -p $(BUILD_DIR)/packages/darwin-arm64
-	@cp $(BUILD_DIR)/$(APP_NAME)-darwin-arm64 $(BUILD_DIR)/packages/darwin-arm64/$(APP_NAME)
-	@cd $(BUILD_DIR)/packages && tar -czf darwin-arm64.tar.gz darwin-arm64
-	@# Linux amd64 package
-	@mkdir -p $(BUILD_DIR)/packages/linux-amd64
-	@cp $(BUILD_DIR)/$(APP_NAME)-linux-amd64 $(BUILD_DIR)/packages/linux-amd64/$(APP_NAME)
-	@cd $(BUILD_DIR)/packages && tar -czf linux-amd64.tar.gz linux-amd64
-	@# Linux ARM64 package
-	@mkdir -p $(BUILD_DIR)/packages/linux-arm64
-	@cp $(BUILD_DIR)/$(APP_NAME)-linux-arm64 $(BUILD_DIR)/packages/linux-arm64/$(APP_NAME)
-	@cd $(BUILD_DIR)/packages && tar -czf linux-arm64.tar.gz linux-arm64
-	@# Linux ARM package
-	@mkdir -p $(BUILD_DIR)/packages/linux-arm
-	@cp $(BUILD_DIR)/$(APP_NAME)-linux-arm $(BUILD_DIR)/packages/linux-arm/$(APP_NAME)
-	@cd $(BUILD_DIR)/packages && tar -czf linux-arm.tar.gz linux-arm
-	@echo "$(GREEN)✓ Release packages created in $(BUILD_DIR)/packages/$(NC)"
-
+	@echo "$(YELLOW)Uploading binaries to GitHub release v$(VERSION)...$(NC)"
+	@gh release delete v$(VERSION) --yes 2>/dev/null || true
+	@echo "## Release v$(VERSION)" > /tmp/release-notes.txt
+	@echo "" >> /tmp/release-notes.txt
+	@echo "This release includes standalone binaries for all major platforms. **No external files needed** - all assets are embedded in the binary." >> /tmp/release-notes.txt
+	@echo "" >> /tmp/release-notes.txt
+	@echo "### Supported Platforms" >> /tmp/release-notes.txt
+	@echo "- **Windows** (amd64) - \`homekitgenqrcode-windows-amd64.exe\`" >> /tmp/release-notes.txt
+	@echo "- **macOS Intel** (amd64) - \`homekitgenqrcode-darwin-amd64\`" >> /tmp/release-notes.txt
+	@echo "- **macOS Apple Silicon** (arm64) - \`homekitgenqrcode-darwin-arm64\`" >> /tmp/release-notes.txt
+	@echo "- **Linux 64-bit** (amd64) - \`homekitgenqrcode-linux-amd64\`" >> /tmp/release-notes.txt
+	@echo "- **Linux ARM64** (arm64) - Raspberry Pi 4+ - \`homekitgenqrcode-linux-arm64\`" >> /tmp/release-notes.txt
+	@echo "- **Linux ARM** (32-bit) - Raspberry Pi 3 and older - \`homekitgenqrcode-linux-arm\`" >> /tmp/release-notes.txt
+	@echo "" >> /tmp/release-notes.txt
+	@echo "### Installation" >> /tmp/release-notes.txt
+	@echo "1. Download the binary for your platform" >> /tmp/release-notes.txt
+	@echo "2. Make it executable (Linux/macOS): \`chmod +x homekitgenqrcode-*\`" >> /tmp/release-notes.txt
+	@echo "3. Run it directly - no dependencies needed!" >> /tmp/release-notes.txt
+	@echo "" >> /tmp/release-notes.txt
+	@echo "### Usage" >> /tmp/release-notes.txt
+	@echo "\`\`\`bash" >> /tmp/release-notes.txt
+	@echo "# Quick start (auto-generate all values)" >> /tmp/release-notes.txt
+	@echo "./homekitgenqrcode code -c 5 -o example.png" >> /tmp/release-notes.txt
+	@echo "" >> /tmp/release-notes.txt
+	@echo "# With all parameters" >> /tmp/release-notes.txt
+	@echo "./homekitgenqrcode generate -c 5 -p \"613-80-755\" -s \"ABCD\" -m \"AABBCCDDEEFF\" -o example.png" >> /tmp/release-notes.txt
+	@echo "\`\`\`" >> /tmp/release-notes.txt
+	@echo "" >> /tmp/release-notes.txt
+	@echo "For more information, see the [README](https://github.com/lordbasex/HomeKitGenQRCode/blob/main/README.md)." >> /tmp/release-notes.txt
+	@gh release create v$(VERSION) --title "v$(VERSION) - Release" --notes-file /tmp/release-notes.txt \
+		$(BUILD_DIR)/$(APP_NAME)-windows-amd64.exe \
+		$(BUILD_DIR)/$(APP_NAME)-darwin-amd64 \
+		$(BUILD_DIR)/$(APP_NAME)-darwin-arm64 \
+		$(BUILD_DIR)/$(APP_NAME)-linux-amd64 \
+		$(BUILD_DIR)/$(APP_NAME)-linux-arm64 \
+		$(BUILD_DIR)/$(APP_NAME)-linux-arm
+	@rm -f /tmp/release-notes.txt
+	@echo "$(GREEN)✓ Release v$(VERSION) created with uncompressed binaries$(NC)"
