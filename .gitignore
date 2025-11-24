@@ -30,7 +30,8 @@ go.work.sum
 !assets/*.png
 !ejemplo.png
 dist/
-internal/generator/assets/
+# Allow assets in internal/generator for go:embed
+!internal/generator/assets/
 
 # env file
 .env
