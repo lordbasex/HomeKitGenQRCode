@@ -29,6 +29,7 @@ go.work.sum
 *.png
 !assets/*.png
 !ejemplo.png
+!HomeKitGenQRCode.png
 dist/
 # Allow assets in internal/generator for go:embed
 !internal/generator/assets/
