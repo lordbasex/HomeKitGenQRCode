@@ -32,6 +32,9 @@ go.work.sum
 dist/
 # Allow assets in internal/generator for go:embed
 !internal/generator/assets/
+# WASM build artifacts
+cmd/homekitgenqrcode-wasm/*.wasm
+cmd/homekitgenqrcode-wasm/wasm_exec.js
 
 # env file
 .env

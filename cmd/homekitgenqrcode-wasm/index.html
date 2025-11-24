@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HomeKit QR Code Generator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #007AFF;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        button {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.3s;
+            flex: 1;
+        }
+        button:hover {
+            background: #0056CC;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        button.secondary {
+            background: #6c757d;
+        }
+        button.secondary:hover {
+            background: #5a6268;
+        }
+        #result {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #eee;
+            display: none;
+        }
+        #preview {
+            max-width: 100%;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            border-left: 4px solid #007AFF;
+        }
+        .info p {
+            margin: 5px 0;
+            color: #333;
+        }
+        .error {
+            background: #fff3cd;
+            color: #856404;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 15px;
+            border-left: 4px solid #ffc107;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        small {
+            display: block;
+            margin-top: 5px;
+            color: #666;
+            font-size: 12px;
+        }
+        .form-check {
+            display: flex;
+            align-items: center;
+            margin-top: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+        .form-check-input {
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        .form-check-label {
+            margin: 0;
+            cursor: pointer;
+            user-select: none;
+            color: #555;
+            font-size: 14px;
+        }
+        .download-button {
+            margin-top: 15px;
+            text-align: center;
+        }
+        .download-button button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .download-button button:hover {
+            background: #218838;
+        }
+        .download-button button:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏠 HomeKit QR Code Generator</h1>
+        
+        <form id="qrForm">
+            <div class="form-group">
+                <label for="category">Category:</label>
+                <select id="category" required>
+                    <option value="">Loading categories...</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Setup Code (XXX-XX-XXX):</label>
+                <input type="text" id="password" pattern="\d{3}-\d{2}-\d{3}" placeholder="613-80-755" required>
+                <small>Format: 3 digits, dash, 2 digits, dash, 3 digits</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="setupId">Setup ID (4 alphanumeric characters):</label>
+                <input type="text" id="setupId" maxlength="4" pattern="[0-9A-Z]{4}" placeholder="ABCD" required style="text-transform: uppercase;">
+                <small>4 characters: 0-9, A-Z</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="mac">MAC Address (12 hexadecimal characters):</label>
+                <input type="text" id="mac" maxlength="12" pattern="[0-9A-F]{12}" placeholder="AABBCCDDEEFF" required style="text-transform: uppercase;">
+                <small>12 hexadecimal characters: 0-9, A-F</small>
+            </div>
+            
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="" id="debugMode">
+                <label class="form-check-label" for="debugMode">
+                    Enable Debug Mode (show CLI-like logs in console)
+                </label>
+            </div>
+            
+            <div class="button-group">
+                <button type="button" id="generateRandom" class="secondary">🎲 Generate Random Values</button>
+                <button type="submit">✨ Generate QR Code</button>
+            </div>
+        </form>
+        
+        <div id="error" class="error" style="display:none;"></div>
+        
+        <div id="result">
+            <h2>Generated Label</h2>
+            <img id="preview" alt="HomeKit QR Code Label">
+            <div class="download-button">
+                <button id="downloadBtn" type="button">
+                    <span>⬇️</span>
+                    <span>Download Image</span>
+                </button>
+            </div>
+            <div class="info">
+                <p><strong>💡 Tip:</strong> Click the download button above or right-click the image and select "Save Image As..."</p>
+                <p>The image is ready for printing at 300 DPI</p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="wasm_exec.js"></script>
+    <script>
+        let wasmReady = false;
+        let debugMode = false;
+        let currentImageBase64 = null;
+        
+        // Debug logging function (CLI-like output)
+        function debugLog(message, type = 'info') {
+            if (!debugMode) return;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'info' ? 'ℹ️' : '📁';
+            const style = type === 'error' ? 'color: #dc3545;' : type === 'success' ? 'color: #28a745;' : 'color: #007bff;';
+            
+            console.log(`%c[${timestamp}] ${prefix} ${message}`, style);
+        }
+        
+        // Initialize WASM
+        const go = new Go();
+        WebAssembly.instantiateStreaming(fetch("homekitgenqrcode.wasm"), go.importObject)
+            .then((result) => {
+                go.run(result.instance);
+                wasmReady = true;
+                debugLog("WASM module loaded successfully", 'success');
+                loadCategories();
+            })
+            .catch((err) => {
+                debugLog("Failed to load WASM: " + err.message, 'error');
+                showError("Failed to load WASM: " + err.message);
+            });
+        
+        // Debug mode checkbox handler
+        document.getElementById('debugMode').addEventListener('change', (e) => {
+            debugMode = e.target.checked;
+            if (debugMode) {
+                debugLog("Debug mode enabled - all operations will be logged to console", 'info');
+            } else {
+                console.log("Debug mode disabled");
+            }
+        });
+        
+        // Load categories into select dropdown
+        function loadCategories() {
+            try {
+                debugLog("Loading HomeKit categories...", 'info');
+                const categoriesJson = listCategories();
+                const categories = JSON.parse(categoriesJson);
+                const select = document.getElementById('category');
+                select.innerHTML = '<option value="">Select category...</option>';
+                
+                // Sort categories by ID
+                const sortedIds = Object.keys(categories)
+                    .map(id => parseInt(id))
+                    .sort((a, b) => a - b);
+                
+                sortedIds.forEach(id => {
+                    const option = document.createElement('option');
+                    option.value = id;
+                    option.textContent = `${id}: ${categories[id]}`;
+                    select.appendChild(option);
+                });
+                
+                debugLog(`Loaded ${sortedIds.length} categories`, 'success');
+            } catch (err) {
+                debugLog("Failed to load categories: " + err.message, 'error');
+                showError("Failed to load categories: " + err.message);
+            }
+        }
+        
+        // Generate random values
+        document.getElementById('generateRandom').addEventListener('click', () => {
+            if (!wasmReady) {
+                debugLog("WASM is not ready yet. Please wait...", 'error');
+                showError("WASM is not ready yet. Please wait...");
+                return;
+            }
+            
+            const category = parseInt(document.getElementById('category').value);
+            if (!category) {
+                debugLog("Validation error: Please select a category first", 'error');
+                showError('Please select a category first');
+                return;
+            }
+            
+            try {
+                debugLog(`Generating random values for category: ${category}`, 'info');
+                const result = JSON.parse(generateRandomCode(category));
+                
+                document.getElementById('password').value = result.setupCode;
+                document.getElementById('setupId').value = result.setupID;
+                document.getElementById('mac').value = result.mac;
+                
+                debugLog(`Generated Setup Code: ${result.setupCode}`, 'success');
+                debugLog(`Generated Setup ID: ${result.setupID}`, 'success');
+                debugLog(`Generated MAC Address: ${result.mac}`, 'success');
+                
+                hideError();
+            } catch (err) {
+                debugLog("Failed to generate random values: " + err.message, 'error');
+                showError("Failed to generate random values: " + err.message);
+            }
+        });
+        
+        // Handle form submission
+        document.getElementById('qrForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            if (!wasmReady) {
+                debugLog("WASM is not ready yet. Please wait...", 'error');
+                showError("WASM is not ready yet. Please wait...");
+                return;
+            }
+            
+            const category = parseInt(document.getElementById('category').value);
+            const password = document.getElementById('password').value.trim();
+            const setupId = document.getElementById('setupId').value.trim().toUpperCase();
+            const mac = document.getElementById('mac').value.trim().toUpperCase();
+            
+            debugLog("Starting QR code generation...", 'info');
+            debugLog(`Category: ${category}`, 'info');
+            debugLog(`Password: ${password}`, 'info');
+            debugLog(`Setup ID: ${setupId}`, 'info');
+            debugLog(`MAC: ${mac}`, 'info');
+            
+            // Validate using WASM validation function (same as CLI)
+            const validationRequest = {
+                category: category,
+                password: password,
+                setupId: setupId,
+                mac: mac
+            };
+            
+            try {
+                const validationResponse = JSON.parse(validateInputs(JSON.stringify(validationRequest)));
+                
+                if (!validationResponse.valid) {
+                    debugLog(`Validation error: ${validationResponse.error}`, 'error');
+                    showError(validationResponse.error);
+                    return;
+                }
+                
+                debugLog("All inputs validated successfully", 'success');
+            } catch (err) {
+                debugLog(`Validation error: ${err.message}`, 'error');
+                showError("Validation error: " + err.message);
+                return;
+            }
+            
+            // Generate QR code
+            const request = {
+                category: category,
+                password: password,
+                setupId: setupId,
+                mac: mac
+            };
+            
+            try {
+                debugLog("Generating HomeKit QR code label...", 'info');
+                const response = JSON.parse(generateHomeKitLabel(JSON.stringify(request)));
+                
+                if (response.error) {
+                    debugLog(`Error generating QR code: ${response.error}`, 'error');
+                    showError('Error: ' + response.error);
+                    return;
+                }
+                
+                debugLog("QR code generated successfully", 'success');
+                debugLog("Image size: " + Math.round(response.imageBase64.length / 1024) + " KB (base64)", 'info');
+                
+                // Save image base64 for download
+                currentImageBase64 = response.imageBase64;
+                
+                document.getElementById('preview').src = response.imageBase64;
+                document.getElementById('result').style.display = 'block';
+                hideError();
+                
+                debugLog("✅ QR-code generated and displayed", 'success');
+            } catch (err) {
+                debugLog(`Failed to generate QR code: ${err.message}`, 'error');
+                showError("Failed to generate QR code: " + err.message);
+            }
+        });
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+        
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
+        }
+        
+        // Auto-uppercase for setupId and mac inputs
+        document.getElementById('setupId').addEventListener('input', (e) => {
+            e.target.value = e.target.value.toUpperCase();
+        });
+        
+        document.getElementById('mac').addEventListener('input', (e) => {
+            e.target.value = e.target.value.toUpperCase();
+        });
+        
+        // Download button handler
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            if (!currentImageBase64) {
+                debugLog("No image available to download", 'error');
+                showError("No image available to download");
+                return;
+            }
+            
+            try {
+                debugLog("Starting image download...", 'info');
+                
+                // Convert base64 to blob
+                const base64Data = currentImageBase64.split(',')[1] || currentImageBase64;
+                const byteCharacters = atob(base64Data);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: 'image/png' });
+                
+                // Create download link
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                
+                // Generate filename with timestamp
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+                const category = document.getElementById('category').value;
+                const categoryName = document.getElementById('category').options[document.getElementById('category').selectedIndex]?.text?.split(': ')[1] || 'HomeKit';
+                link.download = `homekit-qrcode-${categoryName.toLowerCase().replace(/\s+/g, '-')}-${timestamp}.png`;
+                
+                // Trigger download
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // Clean up
+                URL.revokeObjectURL(url);
+                
+                debugLog(`Image downloaded as: ${link.download}`, 'success');
+            } catch (err) {
+                debugLog(`Failed to download image: ${err.message}`, 'error');
+                showError("Failed to download image: " + err.message);
+            }
+        });
+    </script>
+</body>
+</html>
+

@@ -95,15 +95,43 @@ local:
 	@go build -ldflags "$(LDFLAGS)" -o $(APP_NAME) ./$(CMD_DIR)
 	@echo "$(GREEN)✓ Local binary created: $(APP_NAME)$(NC)"
 
+# Build WASM version
+wasm:
+	@echo "$(YELLOW)Building WASM version...$(NC)"
+	@mkdir -p $(CMD_DIR)-wasm
+	@GOOS=js GOARCH=wasm go build -ldflags "$(LDFLAGS)" -o $(CMD_DIR)-wasm/homekitgenqrcode.wasm ./$(CMD_DIR)-wasm
+	@if [ -f $$(go env GOROOT)/misc/wasm/wasm_exec.js ]; then \
+		cp $$(go env GOROOT)/misc/wasm/wasm_exec.js $(CMD_DIR)-wasm/; \
+	elif [ -f $$(go env GOROOT)/lib/wasm/wasm_exec.js ]; then \
+		cp $$(go env GOROOT)/lib/wasm/wasm_exec.js $(CMD_DIR)-wasm/; \
+	else \
+		echo "$(YELLOW)Warning: wasm_exec.js not found. Please copy it manually from Go installation.$(NC)"; \
+	fi
+	@echo "$(GREEN)✓ WASM build complete: $(CMD_DIR)-wasm/homekitgenqrcode.wasm$(NC)"
+	@echo "$(GREEN)✓ Files created in $(CMD_DIR)-wasm/:$(NC)"
+	@echo "  - homekitgenqrcode.wasm"
+	@echo "  - wasm_exec.js"
+	@echo "  - index.html"
+	@echo ""
+	@echo "$(YELLOW)To test: Serve $(CMD_DIR)-wasm/ directory with a web server$(NC)"
+	@echo "$(YELLOW)Example: cd $(CMD_DIR)-wasm && python3 -m http.server 8080$(NC)"
+
+# Create WASM ZIP package
+wasm-zip: wasm
+	@echo "$(YELLOW)Creating WASM ZIP package...$(NC)"
+	@cd $(CMD_DIR)-wasm && zip -q homekitgenqrcode-wasm.zip homekitgenqrcode.wasm index.html wasm_exec.js
+	@mv $(CMD_DIR)-wasm/homekitgenqrcode-wasm.zip $(BUILD_DIR)/
+	@echo "$(GREEN)✓ WASM ZIP created: $(BUILD_DIR)/homekitgenqrcode-wasm.zip$(NC)"
+
 # Upload binaries to GitHub release (uncompressed, assets are embedded)
-release: all
+release: all wasm-zip
 	@echo "$(YELLOW)Uploading binaries to GitHub release v$(VERSION)...$(NC)"
 	@gh release delete v$(VERSION) --yes 2>/dev/null || true
 	@echo "## Release v$(VERSION)" > /tmp/release-notes.txt
 	@echo "" >> /tmp/release-notes.txt
-	@echo "This release includes standalone binaries for all major platforms. **No external files needed** - all assets are embedded in the binary." >> /tmp/release-notes.txt
+	@echo "This release includes standalone binaries for all major platforms and a WebAssembly (WASM) version for web browsers. **No external files needed** - all assets are embedded in the binaries." >> /tmp/release-notes.txt
 	@echo "" >> /tmp/release-notes.txt
-	@echo "### Supported Platforms" >> /tmp/release-notes.txt
+	@echo "### CLI Binaries (Standalone)" >> /tmp/release-notes.txt
 	@echo "- **Windows** (amd64) - \`homekitgenqrcode-windows-amd64.exe\`" >> /tmp/release-notes.txt
 	@echo "- **macOS Intel** (amd64) - \`homekitgenqrcode-darwin-amd64\`" >> /tmp/release-notes.txt
 	@echo "- **macOS Apple Silicon** (arm64) - \`homekitgenqrcode-darwin-arm64\`" >> /tmp/release-notes.txt
@@ -111,12 +139,28 @@ release: all
 	@echo "- **Linux ARM64** (arm64) - Raspberry Pi 4+ - \`homekitgenqrcode-linux-arm64\`" >> /tmp/release-notes.txt
 	@echo "- **Linux ARM** (32-bit) - Raspberry Pi 3 and older - \`homekitgenqrcode-linux-arm\`" >> /tmp/release-notes.txt
 	@echo "" >> /tmp/release-notes.txt
+	@echo "### WebAssembly (WASM) Version" >> /tmp/release-notes.txt
+	@echo "- **Complete WASM Package** - \`homekitgenqrcode-wasm.zip\` - Contains all files needed to run in a web browser" >> /tmp/release-notes.txt
+	@echo "  - \`homekitgenqrcode.wasm\` - WebAssembly binary" >> /tmp/release-notes.txt
+	@echo "  - \`index.html\` - Web interface" >> /tmp/release-notes.txt
+	@echo "  - \`wasm_exec.js\` - Go WebAssembly runtime" >> /tmp/release-notes.txt
+	@echo "" >> /tmp/release-notes.txt
 	@echo "### Installation" >> /tmp/release-notes.txt
+	@echo "" >> /tmp/release-notes.txt
+	@echo "#### CLI Version" >> /tmp/release-notes.txt
 	@echo "1. Download the binary for your platform" >> /tmp/release-notes.txt
 	@echo "2. Make it executable (Linux/macOS): \`chmod +x homekitgenqrcode-*\`" >> /tmp/release-notes.txt
 	@echo "3. Run it directly - no dependencies needed!" >> /tmp/release-notes.txt
 	@echo "" >> /tmp/release-notes.txt
+	@echo "#### WASM Version" >> /tmp/release-notes.txt
+	@echo "1. Download \`homekitgenqrcode-wasm.zip\`" >> /tmp/release-notes.txt
+	@echo "2. Extract the ZIP file" >> /tmp/release-notes.txt
+	@echo "3. Serve the files with a web server (e.g., \`http-server\` or \`python3 -m http.server\`)" >> /tmp/release-notes.txt
+	@echo "4. Open in your web browser" >> /tmp/release-notes.txt
+	@echo "" >> /tmp/release-notes.txt
 	@echo "### Usage" >> /tmp/release-notes.txt
+	@echo "" >> /tmp/release-notes.txt
+	@echo "#### CLI" >> /tmp/release-notes.txt
 	@echo "\`\`\`bash" >> /tmp/release-notes.txt
 	@echo "# Quick start (auto-generate all values)" >> /tmp/release-notes.txt
 	@echo "./homekitgenqrcode code -c 5 -o example.png" >> /tmp/release-notes.txt
@@ -125,6 +169,9 @@ release: all
 	@echo "./homekitgenqrcode generate -c 5 -p \"613-80-755\" -s \"ABCD\" -m \"AABBCCDDEEFF\" -o example.png" >> /tmp/release-notes.txt
 	@echo "\`\`\`" >> /tmp/release-notes.txt
 	@echo "" >> /tmp/release-notes.txt
+	@echo "#### WASM" >> /tmp/release-notes.txt
+	@echo "See [WASM README](https://github.com/lordbasex/HomeKitGenQRCode/blob/main/cmd/homekitgenqrcode-wasm/README.md) for detailed instructions." >> /tmp/release-notes.txt
+	@echo "" >> /tmp/release-notes.txt
 	@echo "For more information, see the [README](https://github.com/lordbasex/HomeKitGenQRCode/blob/main/README.md)." >> /tmp/release-notes.txt
 	@gh release create v$(VERSION) --title "v$(VERSION) - Release" --notes-file /tmp/release-notes.txt \
 		$(BUILD_DIR)/$(APP_NAME)-windows-amd64.exe \
@@ -132,6 +179,11 @@ release: all
 		$(BUILD_DIR)/$(APP_NAME)-darwin-arm64 \
 		$(BUILD_DIR)/$(APP_NAME)-linux-amd64 \
 		$(BUILD_DIR)/$(APP_NAME)-linux-arm64 \
-		$(BUILD_DIR)/$(APP_NAME)-linux-arm
+		$(BUILD_DIR)/$(APP_NAME)-linux-arm \
+		$(BUILD_DIR)/homekitgenqrcode-wasm.zip \
+		$(CMD_DIR)-wasm/homekitgenqrcode.wasm \
+		$(CMD_DIR)-wasm/index.html \
+		$(CMD_DIR)-wasm/wasm_exec.js \
+		$(CMD_DIR)-wasm/README.md
 	@rm -f /tmp/release-notes.txt
-	@echo "$(GREEN)✓ Release v$(VERSION) created with uncompressed binaries$(NC)"
+	@echo "$(GREEN)✓ Release v$(VERSION) created with CLI binaries, WASM files, and ZIP package$(NC)"

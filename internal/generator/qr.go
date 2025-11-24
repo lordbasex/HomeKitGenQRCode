@@ -326,6 +326,182 @@ func GenerateHomeKitLabel(category int, password, setupID, mac, output string) e
 	return png.Encode(out, rgbaImg)
 }
 
+// GenerateHomeKitLabelBytes generates a HomeKit QR code label and returns PNG bytes.
+// This version is used for WASM where filesystem access is limited.
+// It reuses all the logic from GenerateHomeKitLabel but returns bytes instead of saving to file.
+func GenerateHomeKitLabelBytes(category int, password, setupID, mac string) ([]byte, error) {
+	// Generate URI and codes
+	uri := GenHomeKitSetupURI(category, password, setupID)
+	device := GenerateDeviceCode(category)
+	serial := GenerateSerial()
+	csn := GenerateCSN()
+
+	// Load base template image from embedded data
+	templateImg, _, err := image.Decode(bytes.NewReader(templateImageData))
+	if err != nil {
+		return nil, fmt.Errorf("error decoding template: %w", err)
+	}
+
+	// Calculate scale factor based on template width
+	templateWidth := float64(templateImg.Bounds().Dx())
+	scale := templateWidth / 842.0
+
+	W := templateImg.Bounds().Dx()
+	H := templateImg.Bounds().Dy()
+
+	// Create new image context using gg library
+	dc := gg.NewContext(W, H)
+	dc.DrawImage(templateImg, 0, 0)
+
+	// Calculate font sizes based on scale factor
+	textFontSize := 18 * scale
+	barcodeFontSize := 36 * scale
+	superscriptFontSize := 8 * scale
+	codeFontSize := 28 * scale
+
+	// Load fonts from embedded data
+	textFace, err := loadFontFace(textFontData, textFontSize)
+	if err != nil {
+		return nil, fmt.Errorf("error loading text font: %w", err)
+	}
+
+	barcodeFace, err := loadFontFace(barcodeFontData, barcodeFontSize)
+	if err != nil {
+		return nil, fmt.Errorf("error loading barcode font: %w", err)
+	}
+
+	superscriptFace, err := loadFontFace(textFontData, superscriptFontSize)
+	if err != nil {
+		superscriptFace = textFace
+	}
+
+	codeFace, err := loadFontFace(textFontData, codeFontSize)
+	if err != nil {
+		return nil, fmt.Errorf("error loading code font: %w", err)
+	}
+
+	// Generate QR code
+	qr, err := qrcode.New(uri, qrcode.Medium)
+	if err != nil {
+		return nil, fmt.Errorf("error generating QR code: %w", err)
+	}
+
+	qrFinalSize := 653
+	boxSizeMultiplier := 4
+	boxSize := (qrFinalSize / 25) * boxSizeMultiplier
+	if boxSize < boxSizeMultiplier {
+		boxSize = boxSizeMultiplier
+	}
+
+	qrImgHighRes := qr.Image(boxSize)
+	qrImgTransparent := makeQRTransparent(qrImgHighRes)
+	qrImg := resizeQRCode(qrImgTransparent, qrFinalSize, qrFinalSize)
+
+	// Convert gg context to RGBA
+	baseImg := dc.Image()
+	rgbaImg, ok := baseImg.(*image.RGBA)
+	if !ok {
+		bounds := baseImg.Bounds()
+		rgbaImg = image.NewRGBA(bounds)
+		draw.Draw(rgbaImg, bounds, baseImg, bounds.Min, draw.Src)
+	}
+
+	// Draw QR code
+	originalQRSize := 136 * scale
+	originalQRX := 19 * scale
+	originalQRY := 77 * scale
+	originalCenterX := originalQRX + originalQRSize/2
+	originalCenterY := originalQRY + originalQRSize/2
+
+	qrX := int(originalCenterX - float64(qrFinalSize)/2)
+	qrY := int(originalCenterY - float64(qrFinalSize)/2)
+
+	qrBounds := qrImg.Bounds()
+	qrDestRect := image.Rect(qrX, qrY, qrX+qrFinalSize, qrY+qrFinalSize)
+	draw.Draw(rgbaImg, qrDestRect, qrImg, qrBounds.Min, draw.Over)
+
+	// Get category name
+	categoryName := CategoryReference[category]
+	if categoryName == "" {
+		categoryName = "Unknown"
+	}
+
+	// Positioning variables
+	y := 6.0
+	x := 200.0
+	spacingTop := 20.0
+	spacingBody := 18.0
+	spacingExtra := 6.0
+	barcodeSpacing := 30.0
+
+	// Draw header text
+	headerText := fmt.Sprintf("HomeKit %s | %s | WIFI", categoryName, device)
+	drawScaledTextOTF(rgbaImg, textFace, headerText, x, y, scale)
+	y += spacingTop
+
+	// Draw brand with trademark
+	brand := "Designed by StudioPeters"
+	drawScaledTextOTF(rgbaImg, textFace, brand, x, y, scale)
+	brandWidth := measureStringWidth(textFace, brand)
+	supRX := x*scale + brandWidth
+	supRY := y*scale + 3*scale
+	drawTextWithFace(rgbaImg, superscriptFace, "®", int(supRX), int(supRY), color.Black)
+
+	y += spacingTop
+	drawScaledTextOTF(rgbaImg, textFace, "Assembled in the Netherlands", x, y, scale)
+	y += spacingTop
+
+	// Draw device code
+	drawScaledTextOTF(rgbaImg, textFace, fmt.Sprintf("(1P)%s", device), x, y, scale)
+
+	// Draw MAC address if provided
+	if mac != "" {
+		formattedMAC := formatMAC(mac)
+		drawScaledTextOTF(rgbaImg, textFace, fmt.Sprintf("MAC: %s", formattedMAC), 560, y, scale)
+		drawScaledTextOTF(rgbaImg, barcodeFace, fmt.Sprintf("*%s*", strings.ToUpper(mac)), 560, y+spacingBody+spacingExtra, scale)
+	}
+
+	y += spacingBody + spacingExtra
+
+	// Draw device code barcode
+	drawScaledTextOTF(rgbaImg, barcodeFace, fmt.Sprintf("*%s*", device), x, y, scale)
+
+	y += barcodeSpacing
+
+	// Draw serial number
+	drawScaledTextOTF(rgbaImg, textFace, fmt.Sprintf("(S) Serial No. %s", serial), x, y, scale)
+	y += spacingBody + spacingExtra
+
+	// Draw serial barcode
+	drawScaledTextOTF(rgbaImg, barcodeFace, fmt.Sprintf("*%s*", serial), x, y, scale)
+
+	y += barcodeSpacing
+
+	// Draw CSN
+	drawScaledTextOTF(rgbaImg, textFace, fmt.Sprintf("CSN %s", csn), x, y, scale)
+	y += spacingBody + spacingExtra
+
+	// Draw CSN barcode
+	drawScaledTextOTF(rgbaImg, barcodeFace, fmt.Sprintf("*%s*", csn), x, y, scale)
+
+	// Draw setup code digits
+	code := strings.ReplaceAll(password, "-", "")
+	for i := 0; i < 4; i++ {
+		cx, cy := scaleCoords(76+float64(i)*20, 12, scale)
+		drawTextWithFace(rgbaImg, codeFace, string(code[i]), cx, cy, color.Black)
+		cx, cy = scaleCoords(76+float64(i)*20, 39, scale)
+		drawTextWithFace(rgbaImg, codeFace, string(code[i+4]), cx, cy, color.Black)
+	}
+
+	// Encode to PNG bytes instead of saving to file
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, rgbaImg); err != nil {
+		return nil, fmt.Errorf("error encoding PNG: %w", err)
+	}
+
+	return buf.Bytes(), nil
+}
+
 // measureStringWidth measures the width of a string using a font face.
 // Returns the width in pixels as a float64.
 func measureStringWidth(face font.Face, text string) float64 {
