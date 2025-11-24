@@ -1,5 +1,7 @@
 # HomeKitGenQRCode
 
+**Language / Idioma:** [English](README.md) | [Español](README.es.md)
+
 A Go application for generating HomeKit QR code labels with device information.
 
 ## Description
