@@ -4,6 +4,8 @@
 
 Una aplicación en Go para generar etiquetas con códigos QR de HomeKit con información del dispositivo.
 
+![WEB](HomeKitGenQRCode.png)
+
 ![Ejemplo de Etiqueta con Código QR de HomeKit](ejemplo.png)
 
 ## Descripción
@@ -47,6 +49,16 @@ go build ./cmd/homekitgenqrcode
 ```bash
 go install github.com/lordbasex/HomeKitGenQRCode/cmd/homekitgenqrcode@latest
 ```
+
+### Versión Web (Sin Instalación Requerida)
+
+¿Prefieres usar la herramienta directamente en tu navegador? Otra opción es usar nuestra versión web alojada desde CNSoluciones - no necesitas descargar nada, solo genera y listo!
+
+🌐 **[Usar Versión Web →](https://cnsoluciones.com/esp32-homekit-qrcode-generator-web/)**
+
+La versión web proporciona la misma funcionalidad que la herramienta CLI, ejecutándose completamente en tu navegador sin necesidad de instalación ni descargas. ¡Perfecto para generar etiquetas rápidamente!
+
+*Un regalo de Federico Pereira de navidad.*
 
 ## Uso
 
@@ -236,4 +248,12 @@ Esta herramienta está diseñada para funcionar perfectamente con [HomeSpan](htt
 
 - [HomeSpan](https://github.com/HomeSpan/HomeSpan/) - Biblioteca HomeKit para Arduino-ESP32
 - [esp32-homekit-qrcode](https://github.com/AchimPieters/esp32-homekit-qrcode) - Implementación original en Python
+
+## Autor
+
+**Federico Pereira**
+
+Creado con ❤️ por Federico Pereira. Este proyecto fue desarrollado para hacer la generación de etiquetas con códigos QR de HomeKit más fácil y accesible para la comunidad DIY de HomeKit.
+
+Para preguntas, sugerencias o contribuciones, por favor visita el [repositorio de GitHub](https://github.com/lordbasex/HomeKitGenQRCode).
 
