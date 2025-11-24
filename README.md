@@ -4,6 +4,8 @@
 
 A Go application for generating HomeKit QR code labels with device information.
 
+![Example HomeKit QR Code Label](ejemplo.png)
+
 ## Description
 
 Easily generate HomeKit QR code labels for your ESP32 accessories! This Go tool automatically creates print-ready labels including:

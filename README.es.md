@@ -4,6 +4,8 @@
 
 Una aplicación en Go para generar etiquetas con códigos QR de HomeKit con información del dispositivo.
 
+![Ejemplo de Etiqueta con Código QR de HomeKit](ejemplo.png)
+
 ## Descripción
 
 ¡Genera fácilmente etiquetas con códigos QR de HomeKit para tus accesorios ESP32! Esta herramienta en Go crea automáticamente etiquetas listas para imprimir que incluyen:
