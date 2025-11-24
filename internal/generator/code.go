@@ -22,7 +22,7 @@ func GenerateHomeKitSetupCode() string {
 }
 
 // PlainSetupCode converts a formatted setup code to plain format.
-// Example: "482-91-573" -> "48291573"
+// Example: "123-45-678" -> "12345678"
 func PlainSetupCode(code string) string {
 	return strings.ReplaceAll(code, "-", "")
 }

@@ -393,7 +393,7 @@ func measureStringWidth(face font.Face, text string) float64 {
 }
 
 // formatMAC formats a MAC address string by adding colons every 2 characters.
-// Example: "30AEA40506A0" -> "30:AE:A4:05:06:A0"
+// Example: "AABBCCDDEEFF" -> "AA:BB:CC:DD:EE:FF"
 // If the MAC address is not 12 characters, returns it unchanged.
 func formatMAC(mac string) string {
 	if len(mac) != 12 {

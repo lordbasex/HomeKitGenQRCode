@@ -42,16 +42,16 @@ device codes, serial numbers, and other required information.
 
 Examples:
   # Generate a QR code label with all parameters
-  homekitgenqrcode generate --category 5 --password "482-91-573" --setup-id "HSPN" --mac "30AEA40506A0" --output example.png
+  homekitgenqrcode generate --category 5 --password "123-45-678" --setup-id "ABCD" --mac "AABBCCDDEEFF" --output example.png
   
   # Using short flags
-  homekitgenqrcode generate -c 5 -p "482-91-573" -s "HSPN" -m "30AEA40506A0" -o example.png
+  homekitgenqrcode generate -c 5 -p "123-45-678" -s "ABCD" -m "AABBCCDDEEFF" -o example.png
   
   # Generate with auto-generated setup code (easiest way)
   homekitgenqrcode code -c 5 -o example.png
   
   # Generate with custom setup ID and MAC
-  homekitgenqrcode code -c 5 -o example.png -s HSPN -m 30AEA40506A0
+  homekitgenqrcode code -c 5 -o example.png -s ABCD -m AABBCCDDEEFF
   
   # List all available categories
   homekitgenqrcode list-categories
@@ -67,9 +67,9 @@ var generateCmd = &cobra.Command{
 
 All parameters are required:
   - category: HomeKit device category ID (use 'list-categories' to see available options)
-  - password: Setup password in format XXX-XX-XXX (e.g., 482-91-573)
-  - setup-id: Setup ID with 4 alphanumeric characters (0-9, A-Z) (e.g., HSPN)
-  - mac: MAC address with 12 hexadecimal characters (e.g., 30AEA40506A0)
+  - password: Setup password in format XXX-XX-XXX (e.g., 123-45-678)
+  - setup-id: Setup ID with 4 alphanumeric characters (0-9, A-Z) (e.g., ABCD)
+  - mac: MAC address with 12 hexadecimal characters (e.g., AABBCCDDEEFF)
   - output: Output image file path (PNG format, directory will be created if needed)`,
 	RunE: runGenerate,
 }
@@ -98,22 +98,22 @@ You only need to provide:
   - output: Output image file path
 
 Examples:
-  # Generar con valores completamente automáticos
+  # Generate with completely automatic values
   homekitgenqrcode code -c 5 -o example.png
   
-  # Generar con setup ID y MAC personalizados
-  homekitgenqrcode code -c 5 -o example.png -s HSPN -m 30AEA40506A0
+  # Generate with custom setup ID and MAC
+  homekitgenqrcode code -c 5 -o example.png -s ABCD -m AABBCCDDEEFF
   
-  # Solo MAC personalizado (setup ID se genera automáticamente)
-  homekitgenqrcode code -c 5 -o example.png -m 30AEA40506A0
+  # Only custom MAC (setup ID is auto-generated)
+  homekitgenqrcode code -c 5 -o example.png -m AABBCCDDEEFF
   
-  # Solo setup ID personalizado (MAC se genera automáticamente)
-  homekitgenqrcode code -c 5 -o example.png -s HSPN
+  # Only custom setup ID (MAC is auto-generated)
+  homekitgenqrcode code -c 5 -o example.png -s ABCD
   
-  # Usando flags largos
+  # Using long flags
   homekitgenqrcode code --category 5 --output example.png
   
-  # Generar en directorio específico (se crea automáticamente)
+  # Generate in a specific directory (will be created automatically)
   homekitgenqrcode code -c 5 -o output/example.png
 
 For more documentation, visit: https://github.com/lordbasex/HomeKitGenQRCode`,
@@ -290,7 +290,7 @@ func generateRandomMAC() string {
 }
 
 // formatMACDisplay formats a MAC address for display by adding colons every 2 characters.
-// Example: "30AEA40506A0" -> "30:AE:A4:05:06:A0"
+// Example: "AABBCCDDEEFF" -> "AA:BB:CC:DD:EE:FF"
 // If the MAC address is not 12 characters, returns it unchanged.
 func formatMACDisplay(mac string) string {
 	if len(mac) != 12 {
@@ -348,16 +348,16 @@ func validatePassword(pwd string) error {
 	pwd = strings.TrimSpace(pwd)
 	// Format XXX-XX-XXX has 10 characters: 3 + 1 + 2 + 1 + 3 = 10
 	if len(pwd) != 10 {
-		return fmt.Errorf("invalid password length (%d). Expected format: XXX-XX-XXX (e.g., 482-91-573)", len(pwd))
+		return fmt.Errorf("invalid password length (%d). Expected format: XXX-XX-XXX (e.g., 123-45-678)", len(pwd))
 	}
 
 	parts := strings.Split(pwd, "-")
 	if len(parts) != 3 {
-		return fmt.Errorf("invalid password format. Expected format: XXX-XX-XXX (e.g., 482-91-573)")
+		return fmt.Errorf("invalid password format. Expected format: XXX-XX-XXX (e.g., 123-45-678)")
 	}
 
 	if len(parts[0]) != 3 || len(parts[1]) != 2 || len(parts[2]) != 3 {
-		return fmt.Errorf("invalid password format. Expected format: XXX-XX-XXX (e.g., 482-91-573)")
+		return fmt.Errorf("invalid password format. Expected format: XXX-XX-XXX (e.g., 123-45-678)")
 	}
 
 	for i, part := range parts {
@@ -395,7 +395,7 @@ func validateMAC(macAddr string) error {
 	// Trim whitespace and convert to uppercase
 	macAddr = strings.TrimSpace(strings.ToUpper(macAddr))
 	if len(macAddr) != 12 {
-		return fmt.Errorf("invalid MAC address length. Expected 12 hexadecimal characters (e.g., 30AEA40506A0)")
+		return fmt.Errorf("invalid MAC address length. Expected 12 hexadecimal characters (e.g., AABBCCDDEEFF)")
 	}
 
 	for i, r := range macAddr {
